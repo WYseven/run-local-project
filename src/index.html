@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>测试在浏览器中启动本地服务</title>
+  <link rel="stylesheet" href="https://gw.alipayobjects.com/os/lib/xterm/3.14.5/dist/xterm.css">
+  <script src="https://gw.alipayobjects.com/os/lib/xterm/3.14.5/dist/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.4.0/dist/sockjs.min.js"></script>
+</head>
+<body>
+  <button id="button">启动应用</button>
+  <button id="cancel">停止应用</button>
+  <div id="terminal"></div>
+  <script>
+    let term  = new Terminal();
+    term.write('打印信息：\r\n');
+    term.open(document.getElementById('terminal'));
+
+
+    var sock = new SockJS('http://localhost:3002/test');
+
+    // 连接成功触发
+    sock.onopen = function() {
+      console.log('open');
+      // 初始化任务
+      let data = {
+        type: 'task/init'
+      }
+      sock.send(JSON.stringify(data));
+    };
+    // 后端推送过来的数据触发
+    sock.onmessage = function(message){
+      console.log('message: ', message);
+      const data = JSON.parse(message.data);
+      let str = data.payload.log.replace(/\n/g, '\r\n');
+      term.write(str);
+    }
+
+    button.onclick = function(){
+      const task = {
+        type: 'task/run'
+      }
+      sock.send(JSON.stringify(task));
+    }
+    cancel.onclick = function(){
+      const task = {
+        type: 'task/cancel'
+      }
+      sock.send(JSON.stringify(task));
+    }
+  
+  </script>
+</body>
+</html>
+
+
